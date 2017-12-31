@@ -3,6 +3,8 @@
   <head>
     <meta charset="utf-8">
     <title></title>
+    <link href='https://fonts.googleapis.com/css?family=Roboto:300,400,500,700|Material+Icons' rel="stylesheet">
+    <link href="../node_modules/vuetify/dist/vuetify.min.css" rel="stylesheet">
   </head>
   <body>
     <div id="app"></div>
@@ -10,8 +12,11 @@
 
   <script>
   import Vue from 'vue';
-  import App from './app';
+  import Vuetify from 'vuetify'
+  import ConfigWindow from './configWindow.vue';
 
-  new Vue(App).$mount('#app');
+  Vue.use(Vuetify);
+
+  new Vue(ConfigWindow).$mount('#app');
   </script>
 </html>

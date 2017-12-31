@@ -29,7 +29,8 @@
         ]
       },
       "electronPackagerConfig": {
-        "packageManager": "npm"
+        "packageManager": "npm",
+        "ignore": ".idea"
       },
       "electronWinstallerConfig": {
         "name": "jira_timelog"
@@ -50,7 +51,10 @@
     "electron-compile": "^6.4.2",
     "electron-devtools-installer": "^2.2.3",
     "electron-squirrel-startup": "^1.0.0",
-    "vue": "^2.5.13"
+    "electron-store": "^1.3.0",
+    "vue": "^2.5.13",
+    "vueify": "^9.4.1",
+    "vuetify": "^0.17.6"
   },
   "devDependencies": {
     "babel-plugin-transform-async-to-generator": "^6.24.1",

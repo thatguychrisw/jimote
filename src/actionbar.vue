@@ -1,6 +1,6 @@
 <template>
     <div class="search">
-        <input type="text" @keydown.enter="search" placeholder="Issue Key or Summary Text" value="" autofocus/>
+        <input type="text" @keydown.enter="search" placeholder="Issue Key or Summary Text" value="" autofocus />
     </div>
 </template>
 

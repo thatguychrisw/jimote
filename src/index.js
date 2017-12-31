@@ -1,48 +1,39 @@
 import {app, BrowserWindow, globalShortcut, screen, ipcMain} from 'electron';
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer';
 import {enableLiveReload} from 'electron-compile';
+import ElectronStore from 'electron-store';
+
+let store = new ElectronStore();
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
-const isDevMode = process.execPath.match(/[\\/]electron/);
+// const isDevMode = process.execPath.match(/[\\/]electron/);
+const isDevMode = true;
 
 if (isDevMode) enableLiveReload();
 
 // Remove the app from the dock
-app.dock.hide();
+// app.dock.hide();
 
 const createWindow = async () => {
 
-    const appWidth = 800, appHeight = 74;
-    const {width, height} = screen.getPrimaryDisplay().workAreaSize;
-
-    console.log('width', width, 'height', height);
-
-    const
-        appX = Number((width * .5) - (appWidth * .5)),
-        appY = Number(((height * .5) - (appHeight * .5)) * .5);
-
-    console.log('appX', appX, 'appY', appY);
-
     // Create the browser window.
     mainWindow = new BrowserWindow({
-        width: appWidth,
-        height: appHeight,
-        x: appX,
-        y: appY,
+        width: 960,
+        height: 400,
         show: false,
         frame: false,
         resizable: true,
-        animate: true,
+        backgroundColor: 'white'
     });
 
     // Load the application
     mainWindow.loadURL(`file://${__dirname}/index.html`);
 
     ipcMain.on('app-search', () => {
-        mainWindow.setSize(appWidth, appHeight + 300, true);
+        mainWindow.setSize(appWidth, appHeight + 300, false);
     });
 
     ipcMain.on('app-hide', () => {
@@ -58,9 +49,15 @@ const createWindow = async () => {
     });
 
     mainWindow.once('ready-to-show', () => {
-        globalShortcut.register('Command+J', () => {
+        const jiraConfig = store.get('jira');
+        if (jiraConfig === undefined) {
             mainWindow.show();
-        });
+        }
+
+        // Actionbar shortcut
+        // globalShortcut.register('Command+J', () => {
+        //     mainWindow.show();
+        // });
     });
 
     if (isDevMode) {
