@@ -1,9 +1,9 @@
 {
-  "name": "jira-timelog",
-  "productName": "jira-timelog",
+  "name": "Jimote",
+  "productName": "Jimote",
   "version": "1.0.0",
-  "description": "My Electron application description",
-  "main": "src/index.js",
+  "description": "An app for quickly interacting with JIRA",
+  "main": "src/app.js",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
@@ -11,7 +11,11 @@
     "publish": "electron-forge publish",
     "lint": "echo \"No linting configured\""
   },
-  "keywords": [],
+  "keywords": [
+    "jira",
+    "electron",
+    "electron-forge"
+  ],
   "author": "thatguychrisw",
   "license": "MIT",
   "config": {
@@ -53,6 +57,7 @@
     "electron-devtools-installer": "^2.2.3",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^1.3.0",
+    "jira-client": "^6.4.1",
     "vue": "^2.5.13",
     "vueify": "^9.4.1",
     "vuetify": "^0.17.6"
