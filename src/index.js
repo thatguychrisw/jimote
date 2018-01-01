@@ -1,7 +1,8 @@
-import {app, BrowserWindow, globalShortcut, screen, ipcMain} from 'electron';
+import {Menu, shell, app, BrowserWindow, ipcMain} from 'electron';
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer';
 import {enableLiveReload} from 'electron-compile';
 import ElectronStore from 'electron-store';
+import DefaultMenu from 'electron-default-menu';
 
 let store = new ElectronStore();
 
@@ -9,8 +10,7 @@ let store = new ElectronStore();
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow;
 
-// const isDevMode = process.execPath.match(/[\\/]electron/);
-const isDevMode = true;
+const isDevMode = process.execPath.match(/[\\/]electron/);
 
 if (isDevMode) enableLiveReload();
 
@@ -19,13 +19,17 @@ if (isDevMode) enableLiveReload();
 
 const createWindow = async () => {
 
+    // Register the default menu based on the app
+    const osDefaultMenu = Menu.buildFromTemplate(DefaultMenu(app, shell));
+    Menu.setApplicationMenu(osDefaultMenu);
+
     // Create the browser window.
     mainWindow = new BrowserWindow({
         width: 960,
         height: 400,
         show: false,
         frame: false,
-        resizable: true,
+        resizable: false,
         backgroundColor: 'white'
     });
 
