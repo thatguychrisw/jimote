@@ -27,26 +27,32 @@
                                     <div class="form">
                                         <v-form v-model="valid" ref="form" lazy-validation>
                                             <v-text-field
-                                                    label="JIRA Board URL"
-                                                    v-model="screen.jira.url.value"
-                                                    :rules="screen.jira.url.rules"
+                                                    label="JIRA Host"
+                                                    v-model="screen.jira.host.value"
+                                                    :rules="screen.jira.host.rules"
+                                                    placeholder="host.atlassian.net"
                                                     required
                                             ></v-text-field>
                                             <v-text-field
                                                     label="User Name"
-                                                    v-model="screen.jira.userName.value"
-                                                    :rules="screen.jira.userName.rules"
+                                                    v-model="screen.jira.username.value"
+                                                    :rules="screen.jira.username.rules"
                                                     required
                                             ></v-text-field>
                                             <v-text-field
                                                     label="Password"
                                                     v-model="screen.jira.password.value"
                                                     :rules="screen.jira.password.rules"
+                                                    type="password"
                                                     required
                                             ></v-text-field>
 
                                             <div class="actions">
-                                                <v-btn color="primary" @click.native="submit()">Continue</v-btn>
+                                                <v-btn color="primary"
+                                                       :loading="screen.jira.isLoading"
+                                                       :disabled="screen.jira.isLoading"
+                                                       @click.native="processJiraStep()">Continue
+                                                </v-btn>
                                             </div>
                                         </v-form>
                                     </div>
@@ -72,13 +78,18 @@
                                                     item-value="key"
                                                     label="Select"
                                                     single-line
+                                                    autocomplete
                                                     bottom
                                             ></v-select>
 
                                             <div class="actions">
-                                                <v-btn color="primary" @click.native="screenIdxSelected = 3">Continue
+                                                <v-btn color="primary" @click.native="processProjectStep()">
+                                                    Continue
                                                 </v-btn>
-                                                <v-btn flat @click.native="screenIdxSelected = 1">Back</v-btn>
+
+                                                <v-btn v-if="jiraClient !== null" flat @click.native="setStep('jira')">
+                                                    Back
+                                                </v-btn>
                                             </div>
                                         </v-form>
 
@@ -90,7 +101,9 @@
                             <v-layout row wrap>
                                 <v-flex xs12>
                                     <div class="info">
-                                        READY TO USE
+                                        <h1>Configuration Complete!</h1>
+
+                                        <h3>Use CMD+J to start using Jimote!</h3>
                                     </div>
                                 </v-flex>
                             </v-layout>
@@ -113,16 +126,17 @@
         data() {
             return {
                 screenIdxSelected: 0,
+                jiraClient: null,
 
                 screen: {
                     jira: {
-                        url: {
+                        host: {
                             value: null,
                             rules: [
-                                (v) => !!v || 'JIRA project url is required',
+                                (v) => !!v || 'JIRA host is required',
                             ],
                         },
-                        userName: {
+                        username: {
                             value: null,
                             rules: [
                                 (v) => !!v || 'user name is required',
@@ -134,6 +148,8 @@
                                 (v) => !!v || 'password is required',
                             ],
                         },
+
+                        isLoading: false,
                     },
 
                     project: {
@@ -147,27 +163,111 @@
             }
         },
 
-        methods: {
-            submit() {
-                if (this.$refs.form.validate()) {
-                    store.set('jira.url', this.screen.jira.url.value);
-                    store.set('jira.userName', this.screen.jira.userName.value);
-                    store.set('jira.password', this.screen.jira.password.value);
+        created: function () {
+            console.log('Checking to see if jira credentials have been provided.');
 
-                    const jira = new JiraApi({
-                        host: this.screen.jira.url.value,
-                        username: this.screen.jira.userName.value,
-                        password: this.screen.jira.password.value,
+            const jiraConfig = store.get('jira');
+            console.log('Jira configuration:', jiraConfig);
+
+            // Jira credentials stored, user may have quit the app and not selected a project
+            if (jiraConfig !== undefined) {
+                console.log('Found credentials, logging user in.');
+
+                this.jiraClient = new JiraApi(jiraConfig);
+
+                for (let configuration in jiraConfig) {
+                    if (this.screen.jira.hasOwnProperty(configuration)) {
+                        this.screen.jira[configuration].value = jiraConfig[configuration];
+                    }
+                }
+
+                // If they left off at the project screen start there
+                if (jiraConfig['project'] !== undefined) {
+                    this.loadProjects().then(() => {
+                        this.screenIdxSelected = 2;
+
+                        this.setStep('project');
                     });
+                } else {
+                    // Finished, should really only be here in known situations like testing
+                    this.setStep('configured');
+                }
+            }
+        },
 
-                    jira.listProjects().then((projects) => {
+        methods: {
+            processJiraStep() {
+                if (this.$refs.form.validate()) {
+                    this.screen.jira.isLoading = true;
+
+                    let
+                        host = this.screen.jira.host.value,
+                        username = this.screen.jira.username.value,
+                        password = this.screen.jira.password.value;
+
+                    store.set('jira.host', host);
+                    store.set('jira.username', username);
+                    store.set('jira.password', password);
+
+                    console.log('Connecting to Jira using the following configuration', store.get('jira'));
+
+                    this.jiraClient = new JiraApi({host, username, password});
+
+                    this.loadProjects().then(() => {
+                        this.screen.jira.isLoading = false;
+
+                        this.setStep('project');
+                    });
+                }
+            },
+
+            processProjectStep() {
+                store.set('project', this.screen.projects.name);
+
+                this.setStep('configured');
+            },
+
+            loadProjects() {
+                return new Promise((resolve, reject) => {
+                    console.log('Fetching projects.');
+
+                    this.jiraClient.listProjects().then((projects) => {
+                        console.log('Received projects:', projects);
+
                         this.screen.project.jira.projects = projects.map(project => ({
                             key: project.key,
                             name: project.name
                         }));
 
-                        this.screenIdxSelected = 2;
+                        resolve();
+                    }).catch(error => {
+                        reject(error);
                     });
+                });
+            },
+
+            setStep(step) {
+                console.log('Set step to:', step);
+
+                switch (step) {
+                    case 'jira':
+                        this.screenIdxSelected = 1;
+
+                        break;
+                    case 'project':
+                        this.screenIdxSelected = 2;
+
+                        break;
+                    case 'configured':
+                        this.screenIdxSelected = 3;
+
+                        store.set('jira.configured', true);
+
+                        break;
+                    default:
+                        console.error('Unknown step:', step);
+
+                        break;
                 }
             },
         },
@@ -182,8 +282,12 @@
 
     .info {
         height: 400px;
-        padding: 15%;
+        padding: 10%;
         color: white;
+
+        h1 {
+            margin-bottom: .5em;
+        }
     }
 
     .form {

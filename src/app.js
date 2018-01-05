@@ -1,4 +1,4 @@
-import {Menu, shell, app, globalShortcut, screen, BrowserWindow, ipcMain} from 'electron';
+import {Menu, shell, app, globalShortcut, screen, Notification, BrowserWindow, ipcMain} from 'electron';
 import installExtension, {VUEJS_DEVTOOLS} from 'electron-devtools-installer';
 import {enableLiveReload} from 'electron-compile';
 import ElectronStore from 'electron-store';
@@ -14,13 +14,7 @@ const isDevMode = process.execPath.match(/[\\/]electron/);
 
 if (isDevMode) {
     enableLiveReload();
-
-    // Reset the jira configuration each load for testing
-    store.set('jira', undefined);
 }
-
-// Remove the app from the dock
-// app.dock.hide();
 
 const createWindow = async () => {
 
@@ -53,23 +47,46 @@ const createWindow = async () => {
 
     mainWindow.once('ready-to-show', () => {
         const jiraConfig = store.get('jira');
-        if (jiraConfig === undefined) {
-            mainWindow.show();
-        }
 
         // Register the global shortcut for the JIRA action bar
-        globalShortcut.register('Command+J', () => {
-            const jiraConfig = store.get('jira');
-            if (jiraConfig !== undefined) {
+        const registerJimoteAccelerator = () => {
+            app.dock.hide();
+
+            globalShortcut.register('Command+J', () => {
+                if (mainWindow.isVisible()) {
+                    mainWindow.hide();
+                }
+
                 actionBar.show();
+            });
+        };
+
+        if (jiraConfig === undefined || !jiraConfig.configured) {
+            mainWindow.show();
+
+            store.onDidChange('jira.configured', registerJimoteAccelerator);
+        } else {
+            // Jira configuration completed
+            console.log('Notifications supported?', Notification.isSupported());
+
+            if (Notification.isSupported()) {
+                new Notification({
+                    title: 'Jimote Loaded!',
+                    body: 'Press ⌘+J to open Jimote',
+                }).show();
             }
-        });
+
+            registerJimoteAccelerator();
+        }
+
+
     });
 
     if (isDevMode) {
         await installExtension(VUEJS_DEVTOOLS);
     }
 };
+
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
