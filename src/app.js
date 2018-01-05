@@ -17,7 +17,6 @@ if (isDevMode) {
 }
 
 const createWindow = async () => {
-
     // Register the default menu based on the app
     const osDefaultMenu = Menu.buildFromTemplate(DefaultMenu(app, shell));
     Menu.setApplicationMenu(osDefaultMenu);
@@ -50,11 +49,13 @@ const createWindow = async () => {
 
         // Register the global shortcut for the JIRA action bar
         const registerJimoteAccelerator = () => {
-            app.dock.hide();
+            if (!isDevMode) {
+                app.dock.hide();
+            }
 
-            globalShortcut.register('Command+J', () => {
+            globalShortcut.register('Command+Option+J', () => {
                 if (mainWindow.isVisible()) {
-                    mainWindow.hide();
+                    mainWindow.destroy();
                 }
 
                 actionBar.show();
@@ -72,14 +73,12 @@ const createWindow = async () => {
             if (Notification.isSupported()) {
                 new Notification({
                     title: 'Jimote Loaded!',
-                    body: 'Press ⌘+J to open Jimote',
+                    body: 'Press ⌘+⌥+J to open Jimote',
                 }).show();
             }
 
             registerJimoteAccelerator();
         }
-
-
     });
 
     if (isDevMode) {
@@ -114,34 +113,63 @@ app.on('activate', () => {
 // code. You can also put them in separate files and import them here.
 const createAppBar = () => {
 
-    const appWidth = 800, appHeight = 74;
+    const barWidth = 800, barHeight = 74;
     const {width, height} = screen.getPrimaryDisplay().workAreaSize;
 
     console.log('width', width, 'height', height);
 
     const
-        appX = Number((width * .5) - (appWidth * .5)),
-        appY = Number(((height * .5) - (appHeight * .5)) * .5);
+        barX = Number((width * .5) - (barWidth * .5)),
+        barY = Number(((height * .5) - (barHeight * .5)));
 
-    console.log('appX', appX, 'appY', appY);
+    console.log('barX', barX, 'barY', barY);
 
     const actionBar = new BrowserWindow({
-        width: appWidth,
-        height: appHeight,
+        width: barWidth,
+        height: barHeight,
+        x: barX,
+        y: barY - 300,
         show: false,
         frame: false,
-        resizable: false,
+        resizable: true,
+        alwaysOnTop: true,
         backgroundColor: 'white'
     });
 
     actionBar.loadURL(`file://${__dirname}/actionBar.html`);
 
-    ipcMain.on('app-search', () => {
-        actionBar.setSize(appWidth, appHeight + 300, false);
+    if (isDevMode) {
+        console.log('Press Cmd+Option+Shift+J to shrink app bar');
+
+        globalShortcut.register('Command+Option+Shift+J', () => {
+            actionBar.setSize(barWidth, barHeight, false);
+        });
+
+        console.log('Press Cmd+Option+Shift+R to reset the jira configuration');
+
+        globalShortcut.register('Command+Option+Shift+R', () => {
+            actionBar.hide();
+
+            store.set('jira', undefined);
+
+            createWindow();
+        });
+
+    }
+
+    // events
+    ipcMain.on('bar-search', () => {
+        actionBar.setSize(barWidth, barHeight + 400, false);
     });
 
-    ipcMain.on('app-hide', () => {
+    ipcMain.on('bar-hide', () => {
         actionBar.hide();
+
+        actionBar.setSize(barWidth, barHeight, false);
+    });
+
+    ipcMain.on('bar-reset', () => {
+        actionBar.setSize(barWidth, barHeight, false);
     });
 
     return actionBar;
