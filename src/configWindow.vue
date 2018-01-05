@@ -2,11 +2,11 @@
     <div class="config-window">
         <v-app>
             <div>
-                <v-stepper v-model="screenIdxSelected">
+                <v-stepper v-model="stepSelected">
                     <v-stepper-header>
-                        <v-stepper-step step="1" :complete="screenIdxSelected > 1">JIRA Setup</v-stepper-step>
+                        <v-stepper-step step="1" :complete="stepSelected > 1">JIRA Setup</v-stepper-step>
                         <v-divider></v-divider>
-                        <v-stepper-step step="2" :complete="screenIdxSelected > 2">Choose a Project</v-stepper-step>
+                        <v-stepper-step step="2" :complete="stepSelected > 2">Choose a Project</v-stepper-step>
                         <v-divider></v-divider>
                         <v-stepper-step step="3">Setup Complete</v-stepper-step>
                     </v-stepper-header>
@@ -126,7 +126,7 @@
         name: 'configWindow',
         data() {
             return {
-                screenIdxSelected: 0,
+                stepSelected: 0,
                 jiraClient: null,
 
                 screen: {
@@ -185,8 +185,6 @@
                 // If they left off at the project screen start there
                 if (jiraConfig['project'] !== undefined) {
                     this.loadProjects().then(() => {
-                        this.screenIdxSelected = 2;
-
                         this.setStep('project');
                     });
                 } else {
@@ -254,15 +252,15 @@
 
                 switch (step) {
                     case 'jira':
-                        this.screenIdxSelected = 1;
+                        this.stepSelected = 1;
 
                         break;
                     case 'project':
-                        this.screenIdxSelected = 2;
+                        this.stepSelected = 2;
 
                         break;
                     case 'configured':
-                        this.screenIdxSelected = 3;
+                        this.stepSelected = 3;
 
                         store.set('jira.configured', true);
 
