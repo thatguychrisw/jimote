@@ -37,6 +37,7 @@
                                                     label="User Name"
                                                     v-model="screen.jira.username.value"
                                                     :rules="screen.jira.username.rules"
+                                                    placeholder="user@domain.com"
                                                     required
                                             ></v-text-field>
                                             <v-text-field
@@ -222,7 +223,9 @@
             },
 
             processProjectStep() {
-                store.set('project', this.screen.projects.name);
+                store.set('project', this.screen.project.name);
+
+                console.log('Project configured:', store.get('project'));
 
                 this.setStep('configured');
             },
